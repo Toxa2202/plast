@@ -37,5 +37,12 @@ namespace EPlast.BLL.Services.Interfaces
         /// </summary>
         /// <returns>Specify model with all users</returns>
         Task<IEnumerable<UserTableDTO>> UsersTableAsync();
+
+        /// <summary>
+        /// Get City By User Id
+        /// </summary>
+        /// <returns>Name of the city</returns>
+        Task<string> GetCityByUserIdAsync(string userId);
+        //Task EditCityAsync(string userId, string city);
     }
 }

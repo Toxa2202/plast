@@ -2,6 +2,7 @@
 using EPlast.BLL.DTO.City;
 using EPlast.BLL.Interfaces.AzureStorage;
 using EPlast.BLL.Interfaces.City;
+using EPlast.DataAccess.Entities;
 using EPlast.DataAccess.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -56,6 +57,11 @@ namespace EPlast.BLL.Services
         public async Task<IEnumerable<CityDTO>> GetAllDTOAsync(string cityName = null)
         {
             return _mapper.Map<IEnumerable<DataAccessCity.City>, IEnumerable<CityDTO>>(await GetAllAsync(cityName));
+        }
+
+        public async Task<IEnumerable<CityDTO>> GetAllDTOWithRegionAsync(string cityName = null)
+        {
+            return _mapper.Map<IEnumerable<DataAccessCity.City>, IEnumerable<CityDTO>>(await GetAllWithRegionAsync(cityName));
         }
 
         /// <inheritdoc />
@@ -330,6 +336,15 @@ namespace EPlast.BLL.Services
             return city.ID;
         }
 
+        public async Task<IEnumerable<DataAccessCity.City>> GetAllWithRegionAsync(string cityName = null)
+        {
+            var cities = await _repoWrapper.City.GetAllAsync(include: c => c.Include(d => d.Region));
+
+            return string.IsNullOrEmpty(cityName)
+                ? cities
+                : cities.Where(c => c.Name.ToLower().Contains(cityName.ToLower()));
+        }
+
         private async Task<DataAccessCity.City> CreateCityAndRegionAsync(CityProfileDTO model)
         {
             var cityDto = model.City;
@@ -424,5 +439,67 @@ namespace EPlast.BLL.Services
                 await _cityBlobStorage.DeleteBlobAsync(oldImageName);
             }
         }
+
+       
+
+        public async Task<string> GetCityByUserIdAsync(string userId)
+        {
+            var cityMembers = await _repoWrapper.CityMembers.
+               GetAllAsync(null, x => x.Include(i => i.City));
+            var cityName = cityMembers.Where(x => x.UserId.Equals(userId) && x.EndDate == null)
+                                          .Select(x => x.City.Name)
+                                          .FirstOrDefault() ?? string.Empty;
+            return cityName;
+        }
+
+        public async Task<string> GetRegionByUserIdAsync(string userId)
+        {
+            var cities = await _repoWrapper.City.
+               GetAllAsync(null, x => x.Include(i => i.Region));
+            var cityMembers = await _repoWrapper.CityMembers.
+               GetAllAsync(null, x => x.Include(i => i.City));
+            var cityName = cityMembers.Where(x => x.UserId.Equals(userId) && x.EndDate == null)
+                                          .Select(x => x.City.Name)
+                                          .LastOrDefault() ?? string.Empty;
+            return !string.IsNullOrEmpty(cityName) ? cities
+                        .FirstOrDefault(x => x.Name.Equals(cityName))
+                        ?.Region.RegionName : string.Empty;
+
+        }
+
+        public async Task EditCityAsync(string userId, int cityId)
+        {
+            User user = await _userManager.FindByIdAsync(userId);
+            var userCity = await GetCityIdByUserIdAsync(userId);
+            var addedCity = cityId;
+            var removedCity = userCity;
+            await AddToCitiesAsync(user, addedCity);
+            await RemoveFromCitiesAsync(user, removedCity);
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Count == 0)
+            {
+                await _userManager.AddToRoleAsync(user, "Прихильник");
+            }
+        }
+
+        private async Task<int> GetCityIdByUserIdAsync(string userId)
+        {
+            var cityMembers = await _repoWrapper.CityMembers.
+               GetAllAsync(null, x => x.Include(i => i.City));
+            var cityId = cityMembers.Where(x => x.UserId.Equals(userId) && x.EndDate == null)
+                                          .Select(x => x.CityId)
+                                          .FirstOrDefault();
+            return cityId;
+        }
+
+        private async Task AddToCitiesAsync(User user, int cityId)
+        {
+
+        }
+        private async Task RemoveFromCitiesAsync(User user, int cityId)
+        {
+
+        }
     }
+
 }

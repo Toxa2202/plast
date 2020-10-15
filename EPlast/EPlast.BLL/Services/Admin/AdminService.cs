@@ -125,28 +125,6 @@ namespace EPlast.BLL.Services
             return userTable;
         }
 
-        public async Task<string> GetCityByUserIdAsync(string userId)
-        {
-            var city = await _repoWrapper.City.
-                GetFirstOrDefaultAsync(x => x.CityMembers.Any(cm => cm.UserId.Equals(userId)));
-            return city?.Name;
-        }
-
-        //public async Task EditCityAsync(string userId, string city)
-        //{
-        //    User user = await _userManager.FindByIdAsync(userId);
-        //    var userCity = await GetCityByUserIdAsync(userId);
-        //    var addedCity = city;
-        //    var removedRoles = userRoles.
-        //        Except(roles).
-        //        Except(new List<string> { "Admin" });
-        //    await _userManager.AddToRolesAsync(user, addedRoles);
-        //    await _userManager.RemoveFromRolesAsync(user, removedRoles);
-        //    var currentRoles = await _userManager.GetRolesAsync(user);
-        //    if (currentRoles.Count == 0)
-        //    {
-        //        await _userManager.AddToRoleAsync(user, "Прихильник");
-        //    }
-        //}
+        
     }
 }

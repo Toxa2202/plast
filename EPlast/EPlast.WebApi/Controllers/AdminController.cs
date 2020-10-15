@@ -2,6 +2,7 @@
 using EPlast.BLL.DTO.AnnualReport;
 using EPlast.BLL.Interfaces.City;
 using EPlast.BLL.Interfaces.Logging;
+using EPlast.BLL.Services.City;
 using EPlast.BLL.Services.Interfaces;
 using EPlast.WebApi.Models.Admin;
 using EPlast.WebApi.Models.City;
@@ -201,52 +202,6 @@ namespace EPlast.WebApi.Controllers
             return BadRequest();
         }
 
-        /// <summary>
-        /// Get specify model for edit city for selected user
-        /// </summary>
-        /// <param name="userId">The id of the user</param>
-        /// <returns>A data of cities for editing user city</returns>
-        /// <response code="200">Successful operation</response>
-        /// <response code="404">User not found</response>
-        [HttpGet("editCity/{userId}")]
-        public async Task<IActionResult> EditCity(string userId)
-        {
-            if (!string.IsNullOrEmpty(userId))
-            {
-                var user = await _userManagerService.FindByIdAsync(userId);
-                if (user == null)
-                {
-                    _loggerService.LogError("User id is null");
-                    return NotFound();
-                }
-                var userCity = await _adminService.GetCityByUserIdAsync(userId);
-                var allCities = await _cityService.GetAllDTOAsync();
-                var cityViewModels = _mapper.Map<IEnumerable<CityViewModel>>(allCities);
-
-                CityEditViewModel model = new CityEditViewModel
-                {
-                    UserID = user.Id,
-                    UserEmail = user.Email,
-                    UserCity = userCity,
-                    AllCities = cityViewModels
-                };
-
-                return Ok(model);
-            }
-            _loggerService.LogError("User id is null");
-            return NotFound();
-        }
-        //[HttpPut("editedRole/{userId}")]
-        //public async Task<IActionResult> EditСity(string userId, string city)
-        //{
-        //    if (!string.IsNullOrEmpty(userId))
-        //    {
-        //        await _adminService.EditCityAsync(userId, city);
-        //        _loggerService.LogInformation($"Successful change city for {userId}");
-        //        return Ok();
-        //    }
-        //    _loggerService.LogError("User id is null");
-        //    return NotFound();
-        //}
+        
     }
 }

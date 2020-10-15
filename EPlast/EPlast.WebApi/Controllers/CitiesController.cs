@@ -3,6 +3,7 @@ using EPlast.BLL.DTO.City;
 using EPlast.BLL.ExtensionMethods;
 using EPlast.BLL.Interfaces.City;
 using EPlast.BLL.Interfaces.Logging;
+using EPlast.BLL.Services.Interfaces;
 using EPlast.WebApi.Models.City;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,7 @@ namespace EPlast.WebApi.Controllers
         private readonly ICityAdministrationService _cityAdministrationService;
         private readonly ICityDocumentsService _cityDocumentsService;
         private readonly ICityAccessService _cityAccessService;
+        private readonly IUserManagerService _userManagerService;
 
         public CitiesController(ILoggerService<CitiesController> logger,
             IMapper mapper,
@@ -32,7 +34,8 @@ namespace EPlast.WebApi.Controllers
             ICityMembersService cityMembersService,
             ICityAdministrationService cityAdministrationService,
             ICityDocumentsService cityDocumentsService,
-            ICityAccessService cityAccessService)
+            ICityAccessService cityAccessService,
+            IUserManagerService userManagerService)
         {
             _logger = logger;
             _mapper = mapper;
@@ -41,6 +44,7 @@ namespace EPlast.WebApi.Controllers
             _cityAdministrationService = cityAdministrationService;
             _cityDocumentsService = cityDocumentsService;
             _cityAccessService = cityAccessService;
+            _userManagerService = userManagerService;
         }
 
         /// <summary>
@@ -452,6 +456,54 @@ namespace EPlast.WebApi.Controllers
             var userAdmins = await _cityAdministrationService.GetAdministrationsOfUserAsync(UserId);
             
             return Ok(userAdmins);
+        }
+
+        /// <summary>
+        /// Get specify model for edit city for selected user
+        /// </summary>
+        /// <param name="userId">The id of the user</param>
+        /// <returns>A data of cities for editing user city</returns>
+        /// <response code="200">Successful operation</response>
+        /// <response code="404">User not found</response>
+        [HttpGet("editCity/{userId}")]
+        public async Task<IActionResult> EditCity(string userId)
+        {
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var user = await _userManagerService.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogError("User id is null");
+                    return NotFound();
+                }
+                var userCity = await _cityService.GetCityByUserIdAsync(userId);
+                var allCities = await _cityService.GetAllDTOAsync();
+                var cityViewModels = _mapper.Map<IEnumerable<CityViewModel>>(allCities);
+
+                CityEditViewModel model = new CityEditViewModel
+                {
+                    UserID = user.Id,
+                    UserEmail = user.Email,
+                    UserCity = userCity,
+                    AllCities = cityViewModels
+                };
+
+                return Ok(model);
+            }
+            _logger.LogError("User id is null");
+            return NotFound();
+        }
+        [HttpPut("editedCity/{userId}")]
+        public async Task<IActionResult> EditСity(string userId, int cityId)
+        {
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await _cityService.EditCityAsync(userId, cityId);
+                _logger.LogInformation($"Successful change city for {userId}");
+                return Ok();
+            }
+            _logger.LogError("User id is null");
+            return NotFound();
         }
 
 

@@ -494,10 +494,11 @@ namespace EPlast.WebApi.Controllers
             return NotFound();
         }
         [HttpPut("editedCity/{userId}")]
-        public async Task<IActionResult> EditСity(string userId, int cityId)
+        public async Task<IActionResult> EditСity(string userId, [FromBody] string cityName)
         {
             if (!string.IsNullOrEmpty(userId))
             {
+                var cityId = await _cityService.GetCityByNameAsync(cityName);
                 await _cityService.EditCityAsync(userId, cityId);
                 _logger.LogInformation($"Successful change city for {userId}");
                 return Ok();
@@ -505,8 +506,5 @@ namespace EPlast.WebApi.Controllers
             _logger.LogError("User id is null");
             return NotFound();
         }
-
-
-
     }
 }

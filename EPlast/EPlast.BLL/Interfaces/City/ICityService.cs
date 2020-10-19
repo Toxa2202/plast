@@ -132,5 +132,7 @@ namespace EPlast.BLL.Interfaces.City
         Task<string> GetLogoBase64(string logoName);
         Task<string> GetCityByUserIdAsync(string userId);
         Task EditCityAsync(string userId, int cityId);
+
+        Task<int> GetCityByNameAsync(string cityName);
     }
 }

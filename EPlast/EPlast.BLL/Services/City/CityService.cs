@@ -26,6 +26,7 @@ namespace EPlast.BLL.Services
         private readonly IWebHostEnvironment _env;
         private readonly ICityBlobStorageRepository _cityBlobStorage;
         private readonly ICityAccessService _cityAccessService;
+        private readonly ICityMembersService _cityMembersService;
         private readonly UserManager<DataAccessCity.User> _userManager;
 
         public CityService(IRepositoryWrapper repoWrapper,
@@ -33,7 +34,8 @@ namespace EPlast.BLL.Services
             IWebHostEnvironment env,
             ICityBlobStorageRepository cityBlobStorage,
             ICityAccessService cityAccessService,
-            UserManager<DataAccessCity.User> userManager)
+            UserManager<DataAccessCity.User> userManager,
+            ICityMembersService cityMembersService)
         {
             _repoWrapper = repoWrapper;
             _mapper = mapper;
@@ -41,6 +43,7 @@ namespace EPlast.BLL.Services
             _cityBlobStorage = cityBlobStorage;
             _cityAccessService = cityAccessService;
             _userManager = userManager;
+            _cityMembersService = cityMembersService;
         }
 
         /// <inheritdoc />
@@ -70,6 +73,14 @@ namespace EPlast.BLL.Services
             var cities = await _repoWrapper.City.GetAllAsync(c => c.RegionId == regionId);
 
             return _mapper.Map<IEnumerable<DataAccessCity.City>, IEnumerable<CityDTO>>(cities);
+        }
+
+        public async Task<int> GetCityByNameAsync(string cityName)
+        {
+            var city = await _repoWrapper.City.GetFirstOrDefaultAsync(c => c.Name == cityName);
+            var cityId = city.ID;
+
+            return cityId;
         }
 
         /// <inheritdoc />
@@ -473,13 +484,16 @@ namespace EPlast.BLL.Services
             var userCity = await GetCityIdByUserIdAsync(userId);
             var addedCity = cityId;
             var removedCity = userCity;
-            await AddToCitiesAsync(user, addedCity);
-            await RemoveFromCitiesAsync(user, removedCity);
-            var currentRoles = await _userManager.GetRolesAsync(user);
-            if (currentRoles.Count == 0)
-            {
-                await _userManager.AddToRoleAsync(user, "Прихильник");
-            }
+            var cityMember = await _cityMembersService.AddFollowerAsync(cityId, userId);
+            var cityMemberApproved = await _cityMembersService.ToggleApproveStatusAsync(cityMember.ID);
+
+            //await AddToCitiesAsync(user, addedCity);
+            //await RemoveFromCitiesAsync(user, removedCity);
+            //var currentRoles = await _userManager.GetRolesAsync(user);
+            //if (currentRoles.Count == 0)
+            //{
+            //    await _userManager.AddToRoleAsync(user, "Прихильник");
+            //}
         }
 
         private async Task<int> GetCityIdByUserIdAsync(string userId)

@@ -1,4 +1,7 @@
-﻿using MigraDoc.Rendering;
+﻿using PdfSharp;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 using System;
 using System.IO;
 using System.Text;
@@ -8,7 +11,7 @@ namespace EPlast.BLL
     internal class PdfCreator : IPdfCreator
     {
         private readonly IPdfDocument document;
-        private PdfDocumentRenderer renderer;
+        private readonly PdfSharp.Pdf.PdfDocument document;
 
         public PdfCreator(IPdfDocument document)
         {

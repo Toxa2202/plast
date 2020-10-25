@@ -1,11 +1,14 @@
-﻿using MigraDoc.DocumentObjectModel;
+﻿using PdfSharp;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 using System.Reflection.Metadata;
-using Document = MigraDoc.DocumentObjectModel.Document;
+
 
 namespace EPlast.BLL
 {
     internal interface IPdfDocument
     {
-        Document GetDocument();
+        PdfSharp.Pdf.PdfDocument GetDocument();
     }
 }

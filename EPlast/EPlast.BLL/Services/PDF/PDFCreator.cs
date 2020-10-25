@@ -34,11 +34,7 @@ namespace EPlast.BLL
 
         private void CreatePDF()
         {
-            pdf = new PdfSharp.Pdf.PdfDocument()
-            {
-
-                Document = document.GetDocument()
-            };
+            pdf = document.GetDocument();
 
             //pdf.RenderDocument();
         }

@@ -2,6 +2,7 @@
 using System.Linq;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.DocumentObjectModel.Shapes;
+using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
 namespace EPlast.BLL
@@ -211,7 +212,7 @@ namespace EPlast.BLL
             };
         }
 
-        public override void SetDocumentBody(PdfPage page)
+        public override void SetDocumentBody(PdfPage page, XGraphics gfx)
         {
             throw new NotImplementedException();
         }

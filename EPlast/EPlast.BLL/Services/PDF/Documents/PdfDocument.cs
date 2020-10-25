@@ -4,6 +4,11 @@ using PdfSharp.Pdf;
 
 using PdfSharp.Pdf.IO;
 using System;
+using System.Drawing;
+using System.IO;
+using EPlast.BLL.ExtensionMethods;
+using EPlast.DataAccess.Entities;
+
 
 namespace EPlast.BLL
 {
@@ -24,26 +29,47 @@ namespace EPlast.BLL
         }
        protected  void DrawImage(XGraphics gfx, string jpegSamplePath, int x, int y, int width, int height)
         {
-            XImage image = XImage.FromFile(jpegSamplePath);
+            var bytes = Convert.FromBase64String(jpegSamplePath);
+            string path = "../decisiontmp.img";
+            using (var imageFile = new FileStream(path, FileMode.Create))
+            {
+                imageFile.Write(bytes, 0, bytes.Length);
+                imageFile.Flush();
+            }
+
+            XImage image = XImage.FromFile(path);
             gfx.DrawImage(image, x, y, width, height);
         }
-       protected void DrawText(XGraphics gfx, int number)
+       protected void DrawText(XGraphics gfx, int number, Decesion decesion)
        {
-           BeginBox(gfx, number, "Text Styles");
+           //BeginBox(gfx, number, "Text Styles");
            const string facename = "Times New Roman";
 //XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
 
-           XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.WinAnsi, PdfFontEmbedding.Default);
-           XFont fontRegular = new XFont(facename, 20, XFontStyle.Regular, options);
-           XFont fontBold = new XFont(facename, 20, XFontStyle.Bold, options);
-           XFont fontItalic = new XFont(facename, 20, XFontStyle.Italic, options);
-           XFont fontBoldItalic = new XFont(facename, 20, XFontStyle.BoldItalic, options);
-// The default alignment is baseline left (that differs from GDI+)
-           gfx.DrawString("Times (regular)", fontRegular, XBrushes.DarkSlateGray, 0, 30);
-           gfx.DrawString("Times (bold)", fontBold, XBrushes.DarkSlateGray, 0, 65);
-           gfx.DrawString("Times (italic)", fontItalic, XBrushes.DarkSlateGray, 0, 100);
-           gfx.DrawString("Times (bold italic)", fontBoldItalic, XBrushes.DarkSlateGray, 0, 135);
-           EndBox(gfx);
+           XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
+           XFont font = new XFont(facename, 12, XFontStyle.Regular, options);
+            //XFont fontBold = new XFont(facename, 20, XFontStyle.Bold, options);
+            //XFont fontItalic = new XFont(facename, 20, XFontStyle.Italic, options);
+            //XFont fontBoldItalic = new XFont(facename, 20, XFontStyle.BoldItalic, options);
+            // The default alignment is baseline left (that differs from GDI+)
+            //XRect rect = new XRect(0, 0, 250, 140);
+            XStringFormat format = new XStringFormat();
+            string text = $"{decesion.Description}";
+
+            gfx.DrawString(text, font, XBrushes.Black, 70, 330, format);
+
+            text = $"{decesion.Name} від {decesion.Date:dd/MM/yyyy}";
+            font = new XFont(facename, 14, XFontStyle.Regular, options);
+            gfx.DrawString(text, font, XBrushes.Black, 375, 220,format);
+            //format.Alignment = XStringAlignment.;
+
+            text = $"Поточний статус: {decesion.DecesionStatusType.GetDescription()}";
+            gfx.DrawString(text, font, XBrushes.Black, 350, 480, format);
+            //format.Alignment = XStringAlignment.Far;
+            //gfx.DrawString("Times (bold)", fontBold, XBrushes.DarkSlateGray, 0, 65);
+            //gfx.DrawString("Times (italic)", fontItalic, XBrushes.DarkSlateGray, 0, 100);
+            //gfx.DrawString("Times (bold italic)", fontBoldItalic, XBrushes.DarkSlateGray, 0, 135);
+            //EndBox(gfx);
        }
        protected void DrawTextAlignment(XGraphics gfx, int number)
        {
@@ -85,7 +111,7 @@ namespace EPlast.BLL
            const string text = "Hallo";
            const double x = 20, y = 100;
            XSize size = gfx.MeasureString(text, font);
-           double lineSpace = font.GetHeight(gfx);
+           double lineSpace = font.GetHeight();
            int cellSpace = font.FontFamily.GetLineSpacing(style);
            int cellAscent = font.FontFamily.GetCellAscent(style);
            int cellDescent = font.FontFamily.GetCellDescent(style);
@@ -144,7 +170,7 @@ namespace EPlast.BLL
            XStringFormat format = new XStringFormat();
            format.Alignment = XStringAlignment.Near;
            format.LineAlignment = XLineAlignment.Far;
-           gfx.DrawString("Created with " + PdfSharp.ProductVersionInfo.Producer, font, XBrushes.DarkOrchid, rect, format);
+           //gfx.DrawString("Created with " + PdfSharp.ProductVersionInfo.Producer, font, XBrushes.DarkOrchid, rect, format);
            font = new XFont("Verdana", 8);
            format.Alignment = XStringAlignment.Center;
            gfx.DrawString(document.PageCount.ToString(), font, XBrushes.DarkOrchid, rect, format);
@@ -163,8 +189,9 @@ namespace EPlast.BLL
 
             if (!settings.ImagePath.Contains("Blank"))
             {
-                string base64 = "base64:" + settings.ImagePath.Split(',')[1];
-                DrawImage(gfx, base64, 50, 50, 600, 250);
+                //string base64 = "base64:" + settings.ImagePath.Split(',')[1];
+                string base64 = settings.ImagePath.Split(',')[1];
+                DrawImage(gfx, base64, 0, 0, 615, 205);
                 //image.Width = 600;
                 //image.RelativeHorizontal = RelativeHorizontal.Page;
                 //image.RelativeVertical = RelativeVertical.Page;
@@ -181,12 +208,12 @@ namespace EPlast.BLL
                 //image.RelativeHorizontal = RelativeHorizontal.Page;
                 //image.RelativeVertical = RelativeVertical.Page;
             }
-            SetDocumentBody(page);
+            SetDocumentBody(page,gfx);
 
             return document;
         }
 
-        public abstract void SetDocumentBody(PdfPage page);
+        public abstract void SetDocumentBody(PdfPage page, XGraphics gfx);
 
         public virtual void DefineStyles(PdfSharp.Pdf.PdfDocument document)
         {

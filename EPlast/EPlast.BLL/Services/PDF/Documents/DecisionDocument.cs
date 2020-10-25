@@ -21,13 +21,13 @@ namespace EPlast.BLL
             this.decesion = decesion;
         }
 
-        public override void SetDocumentBody(PdfPage page)
+        public override void SetDocumentBody(PdfPage page, XGraphics gfx)
         {
-            XGraphics gfx = XGraphics.FromPdfPage(page);
-            DrawTitle(page, gfx, "Text");
-            DrawText(gfx, 1);
-            DrawTextAlignment(gfx, 2);
-            MeasureText(gfx, 3);
+            //XGraphics gfx = XGraphics.FromPdfPage(page);
+            //DrawTitle(page, gfx, "Text");
+            DrawText(gfx, 1,decesion);
+            //DrawTextAlignment(gfx, 2);
+            //MeasureText(gfx, 3);
             //var paragraph = section.AddParagraph($"{decesion.Name} від {decesion.Date:dd/MM/yyyy}");
 
             //paragraph.Format = new ParagraphFormat

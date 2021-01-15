@@ -15,6 +15,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,6 +41,7 @@ namespace EPlast.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddAutoMapper();
             services.AddHangFire();
             services.AddHangfireServer();
@@ -64,7 +68,9 @@ namespace EPlast.WebApi
             {
                 options.Configuration = Configuration.GetConnectionString("Redis");
                 options.InstanceName = "Redis_";
-            });    
+            });
+            //services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

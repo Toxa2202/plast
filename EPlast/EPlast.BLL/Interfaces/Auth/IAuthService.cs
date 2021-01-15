@@ -88,6 +88,13 @@ namespace EPlast.BLL.Interfaces
         /// <returns>Result of adding role and token</returns>
         Task<string> AddRoleAndTokenAsync(RegisterDto registerDto);
 
+
+
+        Task<string> AddRoleAndTokenAsync(string email);
+
+
+
+
         /// <summary>
         /// Generating confirmation token
         /// </summary>
@@ -180,6 +187,20 @@ namespace EPlast.BLL.Interfaces
         /// <param name="registerDto"></param>
         /// <returns>Result of sending email</returns>
         Task SendEmailRegistr(string confirmationLink, RegisterDto registerDto);
+
+
+
+        /// <summary>
+        /// Sending email for registration
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns>Result of sending email</returns>
+        Task<bool> SendEmailRegistr(string email);
+
+
+
+
+
 
         /// <summary>
         /// Sending email for reseting

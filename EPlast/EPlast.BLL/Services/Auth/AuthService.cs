@@ -16,6 +16,10 @@ using EPlast.BLL.Models;
 using EPlast.DataAccess.Repositories;
 using Newtonsoft.Json;
 using NLog.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace EPlast.BLL.Services
 {
@@ -26,21 +30,29 @@ namespace EPlast.BLL.Services
         private readonly IEmailConfirmation _emailConfirmation;
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly IUrlHelper _Url;
+        private readonly IHttpContextAccessor _contextAccessor;
         public AuthService(UserManager<User> userManager,
             SignInManager<User> signInManager,
             IEmailConfirmation emailConfirmation,
             IMapper mapper,
-            IRepositoryWrapper repoWrapper)
+            IRepositoryWrapper repoWrapper
+            ,IUrlHelperFactory urlHelperFactory
+            ,IActionContextAccessor actionContextAccessor
+            ,IHttpContextAccessor contextAccessor
+            )
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailConfirmation = emailConfirmation;
             _mapper = mapper;
             _repoWrapper = repoWrapper;
+            _Url = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
+            _contextAccessor = contextAccessor;
         }
 
         ///<inheritdoc/>
-        public async Task<SignInResult> SignInAsync(LoginDto loginDto)
+        public async Task<Microsoft.AspNetCore.Identity.SignInResult> SignInAsync(LoginDto loginDto)
         {
             var user = _userManager.FindByEmailAsync(loginDto.Email);
             var result = await _signInManager.PasswordSignInAsync(user.Result, loginDto.Password, loginDto.RememberMe, true);
@@ -110,9 +122,9 @@ namespace EPlast.BLL.Services
         }
 
         ///<inheritdoc/>
-        public async Task<SignInResult> GetSignInResultAsync(ExternalLoginInfo externalLoginInfo)
+        public async Task<Microsoft.AspNetCore.Identity.SignInResult> GetSignInResultAsync(ExternalLoginInfo externalLoginInfo)
         {
-            SignInResult signInResult = await _signInManager.ExternalLoginSignInAsync(externalLoginInfo.LoginProvider,
+            Microsoft.AspNetCore.Identity.SignInResult signInResult = await _signInManager.ExternalLoginSignInAsync(externalLoginInfo.LoginProvider,
                     externalLoginInfo.ProviderKey, isPersistent: false, bypassTwoFactor: true);
             return signInResult;
         }
@@ -125,9 +137,9 @@ namespace EPlast.BLL.Services
         }
 
         ///<inheritdoc/>
-        public async Task<string> AddRoleAndTokenAsync(RegisterDto registerDto) 
+        public async Task<string> AddRoleAndTokenAsync(string email) 
         {
-            var user = await _userManager.FindByEmailAsync(registerDto.Email);
+            var user = await _userManager.FindByEmailAsync(email);
             await _userManager.AddToRoleAsync(user, "Зареєстрований користувач");
             string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             return code;
@@ -218,23 +230,34 @@ namespace EPlast.BLL.Services
         }
 
         ///<inheritdoc/>
-        public async Task SendEmailRegistr(string confirmationLink, UserDTO userDto)
+        public async Task<bool> SendEmailRegistr(string email)
         {
-            var user = await _userManager.FindByIdAsync(userDto.Id);
+            string token = await this.AddRoleAndTokenAsync(email);
+            var user = await _userManager.FindByEmailAsync(email);
+
+            string confirmationLink = _Url.Action(
+                        action: "confirmingEmail",
+                        controller: "Auth",
+                        values: new { token, userId = user.Id },
+                        protocol: _contextAccessor.HttpContext.Request.Scheme);
+
             user.EmailSendedOnRegister = DateTime.Now;
-            await _userManager.UpdateAsync(user);
-            await _emailConfirmation.SendEmailAsync(user.Email, "Підтвердження реєстрації ",
-                $"Підтвердіть реєстрацію, перейшовши за :  <a href='{confirmationLink}'>посиланням</a> ", "Адміністрація сайту EPlast");
+
+            return (await _emailConfirmation.SendEmailAsync(
+                email: email,
+                subject: "Підтвердження реєстрації ",
+                message: $"Підтвердіть реєстрацію, перейшовши за :  <a href='{confirmationLink}'>посиланням</a> ",
+                title: "Адміністрація сайту EPlast"));
         }
 
         ///<inheritdoc/>
-        public async Task SendEmailRegistr(string confirmationLink, RegisterDto registerDto)
+        public async Task SendEmailReminder(string cityListUrl, UserDTO userDTO)
         {
-            var user = await _userManager.FindByEmailAsync(registerDto.Email);
+            var user = await _userManager.FindByEmailAsync(userDTO.Email);
             user.EmailSendedOnRegister = DateTime.Now;
-            await _userManager.UpdateAsync(user);  
-            await _emailConfirmation.SendEmailAsync(user.Email, "Підтвердження реєстрації ",
-                $"Підтвердіть реєстрацію, перейшовши за :  <a href='{confirmationLink}'>посиланням</a> ", "Адміністрація сайту EPlast");
+            //await _userManager.UpdateAsync(user);
+            await _emailConfirmation.SendEmailAsync(user.Email, "Вітаємо у системі!",
+                $"Ви успішно активували свій акаунт!\nНе забудьте доєднатись до осередку, перейшовши за :  <a href='{cityListUrl}'>посиланням</a> ", "Адміністрація сайту EPlast");
         }
 
         ///<inheritdoc/>

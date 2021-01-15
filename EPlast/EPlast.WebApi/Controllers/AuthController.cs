@@ -13,6 +13,7 @@ using EPlast.BLL.Models;
 using EPlast.DataAccess.Entities;
 using Microsoft.AspNetCore.Identity;
 using NLog.Extensions.Logging;
+using EPlast.BLL.Services.Interfaces;
 
 namespace EPlast.WebApi.Controllers
 {
@@ -181,14 +182,11 @@ namespace EPlast.WebApi.Controllers
                 }
                 else
                 {
-                    string token = await _authService.AddRoleAndTokenAsync(registerDto);
+                    if(!(await _authService.SendEmailRegistr(registerDto.Email)))
+                    {
+                        return BadRequest(_resources.ResourceForErrors["Register-SMTPServerError"]);
+                    }
                     var userDto = await _authService.FindByEmailAsync(registerDto.Email);
-                    string confirmationLink = Url.Action(
-                        nameof(ConfirmingEmail),
-                        "Auth",
-                        new { token = token, userId = userDto.Id },
-                          protocol: HttpContext.Request.Scheme);
-                    await _authService.SendEmailRegistr(confirmationLink, userDto);
                     await _userDatesService.AddDateEntryAsync(userDto.Id);
                     return Ok(_resources.ResourceForErrors["Confirm-Registration"]);
                 }
@@ -223,7 +221,9 @@ namespace EPlast.WebApi.Controllers
 
                 if (result.Succeeded)
                 {
-                    return Redirect(ConfigSettingLayoutRenderer.DefaultConfiguration.GetSection("URLs")["SignIn"]);
+                    await _authService.SendEmailReminder("http://localhost:3000/cities", userDto);
+                    return Redirect("http://localhost:3000/signin");
+                    //return Redirect(ConfigSettingLayoutRenderer.DefaultConfiguration.GetSection("URLs")["SignIn"]);
                 }
                 else
                 {
@@ -258,7 +258,7 @@ namespace EPlast.WebApi.Controllers
                 "Auth",
                 new { token = token, userId = userDto.Id },
                 protocol: HttpContext.Request.Scheme);
-            await _authService.SendEmailRegistr(confirmationLink, userDto);
+            //await _authService.SendEmailRegistr(confirmationLink, userDto);
 
             return Ok("ResendEmailConfirmation");
         }
